@@ -52,7 +52,15 @@ def registerPlayer(name):
     Args:
       name: the player's full name (need not be unique).
     """
-
+    name = str(name)
+    try:
+        connection = connect()
+        c = connection.cursor()
+        c.execute("INSERT INTO players(name) values(%s)", (name,))
+        connection.commit()
+        connection.close()
+    except Exception as e:
+        print "error: " + str(e)
 
 def playerStandings():
     """Returns a list of the players and their win records, sorted by wins.
@@ -76,8 +84,16 @@ def reportMatch(winner, loser):
       winner:  the id number of the player who won
       loser:  the id number of the player who lost
     """
- 
- 
+    try:
+        connection = connect()
+        c = connection.cursor()
+        c.execute("INSERT INTO matches(winner) values(%s)", (winner,))
+        connection.commit()
+        connection.close()
+    except Exception as e:
+        print "error: " + str(e)
+
+
 def swissPairings():
     """Returns a list of pairs of players for the next round of a match.
   
@@ -93,6 +109,14 @@ def swissPairings():
         id2: the second player's unique id
         name2: the second player's name
     """
+    try:
+        connection = connect()
+        c = connection.cursor()
+        c.execute("""SELECT winner FROM matches, COUNT(*) group by winner
+                ORDER by num desc;""")
+        print c.fetchall()
+    except Exception as e:
+        print "error: " + str(e)
 
 
-print countPlayers()
+
