@@ -39,8 +39,12 @@ def countPlayers():
     """Returns the number of players currently registered."""
     connection = connect()
     c = connection.cursor()
-    c.execute("SELECT count(*) as x FROM players;")
-    return c.fetchall()
+    c.execute("SELECT count(*) AS num FROM players")
+    count = c.fetchall()
+    connection.close()
+    return count.pop()[0]
+
+
 
 
 def registerPlayer(name):
@@ -75,6 +79,10 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
+    for e in players:
+        c.execute("SELECT id from players")
+        c.execute("from matches count(*) as x where winner = id"
+        c.execute("SELECT ")
 
 
 def reportMatch(winner, loser):
@@ -119,4 +127,4 @@ def swissPairings():
         print "error: " + str(e)
 
 
-
+registerPlayer('james')
