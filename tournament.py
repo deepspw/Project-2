@@ -79,10 +79,15 @@ def playerStandings():
         wins: the number of matches the player has won
         matches: the number of matches the player has played
     """
-    for e in players:
-        c.execute("SELECT id from players")
-        c.execute("from matches count(*) as x where winner = id"
-        c.execute("SELECT ")
+    try:
+        connection = connect()
+        c = connection.cursor()
+        c.execute("""select players.id, players.name, wincount.wins from players left outer join wincount on players.id = wincount.winner;
+				 """)
+        return c.fetchall()
+    except Exception as e:
+    	print "error: " + str(e)
+    	# select id name regardless of wether they played, needs to track matches played too
 
 
 def reportMatch(winner, loser):
@@ -127,4 +132,5 @@ def swissPairings():
         print "error: " + str(e)
 
 
-registerPlayer('james')
+
+print playerStandings()
