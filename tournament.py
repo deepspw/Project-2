@@ -82,12 +82,16 @@ def playerStandings():
     try:
         connection = connect()
         c = connection.cursor()
-        c.execute("""select players.id, players.name, wincount.wins from players left outer join wincount on players.id = wincount.winner;
+        c.execute("""SELECT players.id, players.name, wincount.wins, played.count 
+        		  from players 
+        		  left outer join wincount on players.id = wincount.winner
+        		  left outer join played on players.id = played.id;
 				 """)
         return c.fetchall()
     except Exception as e:
     	print "error: " + str(e)
-    	# select id name regardless of wether they played, needs to track matches played too
+    	# select p1, count(*) from (select p1 from matches union all select p2 from matches) as raw group by p1;
+    	# add wincount
 
 
 def reportMatch(winner, loser):
