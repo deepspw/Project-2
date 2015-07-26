@@ -82,8 +82,8 @@ def playerStandings():
     try:
         connection = connect()
         c = connection.cursor()
-        c.execute("""SELECT players.id, players.name, wincount.wins, played.count 
-        		  from players 
+        c.execute("""SELECT players.id, players.name, COALESCE(wincount.wins,0) , COALESCE(played.count,0)
+        		  from players
         		  left outer join wincount on players.id = wincount.winner
         		  left outer join played on players.id = played.id;
 				 """)
@@ -104,9 +104,11 @@ def reportMatch(winner, loser):
     try:
         connection = connect()
         c = connection.cursor()
-        c.execute("INSERT INTO matches(winner) values(%s)", (winner,))
+        c.execute("""UPDATE matches
+                  SET winner = %s WHERE %s and %s in p1 and p2""" , (winner,winner,loser,))
         connection.commit()
         connection.close()
+        # Needs to update on winner and loser being present in match
     except Exception as e:
         print "error: " + str(e)
 
