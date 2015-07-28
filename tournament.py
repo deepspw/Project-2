@@ -104,8 +104,7 @@ def reportMatch(winner, loser):
     try:
         connection = connect()
         c = connection.cursor()
-        c.execute("""UPDATE matches
-                  SET winner = %s WHERE %s and %s in p1 and p2""" , (winner,winner,loser,))
+        c.execute("""INSERT INTO matches values(%s,%s,%s)""" , (loser,winner,winner))
         connection.commit()
         connection.close()
         # Needs to update on winner and loser being present in match
@@ -131,12 +130,24 @@ def swissPairings():
     try:
         connection = connect()
         c = connection.cursor()
-        c.execute("""SELECT winner FROM matches, COUNT(*) group by winner
-                ORDER by num desc;""")
-        print c.fetchall()
+        c.execute("""SELECT id, wins 
+                  FROM wincount 
+                  ORDER BY wins DESC""")
+        rawdata = c.fetchall()
+        rawpairs = []
+        pairs = []
+        for e in rawdata:
+            rawpairs.append(e)
+        while len(rawpairs) > 1:
+            pairs.append((rawpairs.pop(),rawpairs.pop()))
+            print pairs
+        if len(rawpairs) != 0:
+            pairs.append(rawpairs.pop())
+        return pairs
+
+
+
     except Exception as e:
         print "error: " + str(e)
 
-
-
-print playerStandings()
+swissPairings()

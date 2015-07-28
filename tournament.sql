@@ -17,7 +17,7 @@ create view played as select players.id, rawplayed.p1, rawplayed.count
 	left outer join rawplayed on rawplayed.p1 = players.id;
 
 -- Wincount view
-create view wincount as select players.id, matches.winner, count(*) as wins 
+create view wincount as select players.id, matches.winner, count(matches.winner) as wins 
 	from players 
 	left outer join matches on matches.winner=players.id 
 	group by players.id, matches.winner;
