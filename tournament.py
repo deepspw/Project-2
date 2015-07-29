@@ -130,8 +130,9 @@ def swissPairings():
     try:
         connection = connect()
         c = connection.cursor()
-        c.execute("""SELECT id, wins 
+        c.execute("""SELECT wincount.id, players.name
                   FROM wincount 
+                  LEFT OUTER JOIN players ON players.id = wincount.id
                   ORDER BY wins DESC""")
         rawdata = c.fetchall()
         rawpairs = []
@@ -139,8 +140,7 @@ def swissPairings():
         for e in rawdata:
             rawpairs.append(e)
         while len(rawpairs) > 1:
-            pairs.append((rawpairs.pop(),rawpairs.pop()))
-            print pairs
+            pairs.append((rawpairs.pop() + rawpairs.pop()))
         if len(rawpairs) != 0:
             pairs.append(rawpairs.pop())
         return pairs
@@ -150,4 +150,4 @@ def swissPairings():
     except Exception as e:
         print "error: " + str(e)
 
-swissPairings()
+print swissPairings()
