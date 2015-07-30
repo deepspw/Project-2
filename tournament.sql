@@ -6,19 +6,40 @@
 -- You can write comments in this file by starting them with two dashes, like
 -- these lines here.
 
+-- Create database 
+CREATE DATABASE tournament;
+\c tournament;
+
+-- Create table players
+CREATE TABLE players(
+	id SERIAL, 
+	name TEXT, 
+	PRIMARY KEY (id)
+	);
+
+-- Create table matches
+CREATE TABLE matches(
+	p1 int,
+	p2 int,
+	winner int,
+	FOREIGN KEY (p1) REFERENCES players(id),
+	FOREIGN KEY (p2) REFERENCES players(id),
+	FOREIGN KEY (winner) REFERENCES players(id)
+	);
+
 -- Raw played 
-create view rawplayed as select p1, count(*) 
-	from (select p1 from matches union all select p2 from matches) as raw 
-	group by p1;
+CREATE VIEW rawplayed AS SELECT p1, COUNT(*) 
+	FROM (SELECT p1 FROM matches UNION ALL SELECT p2 FROM matches) AS RAW 
+	GROUP BY p1;
 
 -- Played games view
-create view played as select players.id, rawplayed.p1, rawplayed.count 
-	from players 
-	left outer join rawplayed on rawplayed.p1 = players.id;
+CREATE VIEW played AS SELECT players.id, rawplayed.p1, rawplayed.count 
+	FROM players 
+	LEFT OUTER JOIN rawplayed ON rawplayed.p1 = players.id;
 
 -- Wincount view
-create view wincount as select players.id, matches.winner, count(matches.winner) as wins 
-	from players 
-	left outer join matches on matches.winner=players.id 
-	group by players.id, matches.winner;
+CREATE VIEW wincount AS SELECT players.id, matches.winner, count(matches.winner) AS wins 
+	FROM players 
+	LEFT OUTER JOIN matches ON matches.winner=players.id 
+	GROUP BY players.id, matches.winner;
 
