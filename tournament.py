@@ -4,21 +4,48 @@
 #
 
 import psycopg2
-    
 
-def connect():
-    """Connect to the PostgreSQL database.  Returns a database connection."""
-    return psycopg2.connect("dbname=tournament")
+class DB:
+	def __init__(self, dbstr="dbname=tournament"):
+		"""
+		Connect to the PostgreSQL database.  
+		Returns a database connection with the string
+		provided
+		"""
+		self.conn = psycopg2.connect(dbstr)
+		
+	def cursor(self):
+		"""
+		Returns the current database cursor object
+		"""
+		return self.conn.cursor()
+		
+	def execute(self, sql_query_string, and_close=False):
+		"""
+		Takes a string input and a boolean in order to
+		close the database when needed
+		"""
+		cursor = self.cursor()
+		cursor.execute(sql_query_string)
+		if and_close: 
+			self.conn.commit()
+			self.close()
+		
+		# Returns the connection and cursor if not closed.
+		return {"conn": self.conn, "cursor": cursor if not and_close else None}
+	
+	def close(self):
+		"""
+		Closes the connection to db
+		"""
+		return self.conn.close()
+
 
 
 def deleteMatches():
     """Remove all the match records from the database."""
     try:
-        connection = connect()
-        c = connection.cursor()
-        c.execute("DELETE FROM matches;")
-        connection.commit()
-        connection.close()
+        DB().execute("DELETE FROM matches;", True)  
     except Exception as e:
         print e
 
@@ -27,22 +54,20 @@ def deleteMatches():
 def deletePlayers():
     """Remove all the player records from the database."""
     try:
-        connection = connect()
-        c = connection.cursor()
-        c.execute("DELETE FROM players;")
-        connection.commit()
-        connection.close()
+        DB().execute("DELETE FROM players;", True)
     except Exception as e:
         print e
 
 def countPlayers():
     """Returns the number of players currently registered."""
-    connection = connect()
-    c = connection.cursor()
-    c.execute("SELECT count(*) AS num FROM players")
-    count = c.fetchall()
-    connection.close()
-    return count.pop()[0]
+
+	# Creates a new connection "conn" which selects the players table
+    conn = DB().execute("SELECT count(*) AS num FROM players")
+	# Creates a new cursor object containing the fetchall from the table
+    cursor = conn["cursor"].fetchone()[0]
+    conn['conn'].close()
+    print cursor
+    return cursor
 
 
 
@@ -58,41 +83,33 @@ def registerPlayer(name):
     """
     name = str(name)
     try:
-        connection = connect()
-        c = connection.cursor()
-        c.execute("INSERT INTO players(name) values(%s)", (name,))
-        connection.commit()
-        connection.close()
+		DB().execute("INSERT INTO players(name) values(%s)," (name,))
     except Exception as e:
         print "error: " + str(e)
 
 def playerStandings():
-    """Returns a list of the players and their win records, sorted by wins.
+	"""Returns a list of the players and their win records, sorted by wins.
 
-    The first entry in the list should be the player in first place, or a player
-    tied for first place if there is currently a tie.
+	The first entry in the list should be the player in first place, or a player
+	tied for first place if there is currently a tie.
 
-    Returns:
-      A list of tuples, each of which contains (id, name, wins, matches):
-        id: the player's unique id (assigned by the database)
-        name: the player's full name (as registered)
-        wins: the number of matches the player has won
-        matches: the number of matches the player has played
-    """
-    try:
-        connection = connect()
-        c = connection.cursor()
-        c.execute("""SELECT players.id, players.name, COALESCE(wincount.wins,0) , COALESCE(played.count,0)
-        		  from players
-        		  left outer join wincount on players.id = wincount.winner
-        		  left outer join played on players.id = played.id;
-				 """)
-        return c.fetchall()
-    except Exception as e:
-    	print "error: " + str(e)
-    	# select p1, count(*) from (select p1 from matches union all select p2 from matches) as raw group by p1;
-    	# add wincount
+	Returns:
+	A list of tuples, each of which contains (id, name, wins, matches):
+		id: the player's unique id (assigned by the database)
+		name: the player's full name (as registered)
+		wins: the number of matches the player has won
+		matches: the number of matches the player has played
+	"""
+	conn = DB().execute("""
+		SELECT players.id, players.name, COALESCE(wincount.wins,0) , COALESCE(played.count,0)
+		from players 
+		left outer join wincount on players.id = wincount.winner 
+		left outer join played on players.id = played.id;""")
 
+	cursor = conn["cursor"].fetchall()
+	conn['conn'].close()
+	return cursor
+		
 
 def reportMatch(winner, loser):
     """Records the outcome of a single match between two players.
@@ -102,12 +119,7 @@ def reportMatch(winner, loser):
       loser:  the id number of the player who lost
     """
     try:
-        connection = connect()
-        c = connection.cursor()
-        c.execute("""INSERT INTO matches values(%s,%s,%s)""" , (loser,winner,winner))
-        connection.commit()
-        connection.close()
-        # Needs to update on winner and loser being present in match
+        DB().execute("""INSERT INTO matches(p1,p2,winner) values(%s,%s,%s)""" , (loser,winner,winner), True)
     except Exception as e:
         print "error: " + str(e)
 
@@ -128,26 +140,27 @@ def swissPairings():
         name2: the second player's name
     """
     try:
-        connection = connect()
-        c = connection.cursor()
-        c.execute("""SELECT wincount.id, players.name
-                  FROM wincount 
-                  LEFT OUTER JOIN players ON players.id = wincount.id
-                  ORDER BY wins DESC""")
-        rawdata = c.fetchall()
-        rawpairs = []
-        pairs = []
-        for e in rawdata:
-            rawpairs.append(e)
-        while len(rawpairs) > 1:
-            pairs.append((rawpairs.pop() + rawpairs.pop()))
-        if len(rawpairs) != 0:
-            pairs.append(rawpairs.pop())
-        return pairs
+		conn = DB().execute("""
+			SELECT wincount.id, players.name
+			FROM wincount 
+			LEFT OUTER JOIN players ON players.id = wincount.id
+			ORDER BY wins DESC
+			""")
+		cursor = conn["cursor"].fetchall()
+		conn["conn"].close()
+		rawdata = cursor
+		rawpairs = []
+		pairs = []
+		for e in rawdata:
+			rawpairs.append(e)
+		while len(rawpairs) > 1:
+			pairs.append((rawpairs.pop() + rawpairs.pop()))
+		if len(rawpairs) != 0:
+			pairs.append(rawpairs.pop())
+		return pairs
 
 
 
     except Exception as e:
         print "error: " + str(e)
 
-print swissPairings()

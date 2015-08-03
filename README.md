@@ -8,7 +8,7 @@ PostgreSQL database.
 
 ## Requirements
 
-	- Python
+	- Python 2.7
 	- psycopg2
 	- Machine running PostgreSQL
 	
