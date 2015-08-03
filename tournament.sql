@@ -48,3 +48,11 @@ CREATE VIEW wincount AS SELECT players.id, matches.winner, count(matches.winner)
 	LEFT OUTER JOIN matches ON matches.winner=players.id 
 	GROUP BY players.id, matches.winner;
 
+CREATE VIEW standings AS SELECT players.id, players.name, COALESCE(wincount.wins,0) AS wincount,
+	COALESCE(played.count,0) as playcount
+	FROM players
+	LEFT OUTER JOIN wincount on players.id = wincount.winner
+	LEFT OUTER JOIN played on players.id = played.id
+	ORDER BY wins ASC;
+
+
