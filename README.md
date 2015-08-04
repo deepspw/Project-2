@@ -14,8 +14,9 @@ PostgreSQL database.
 	
 ## How to use
 
-Connect to your PostgreSQL DB and run the command \i tournament.sql
-to execute the schema. Use the module by importing it into your python scripts. 
+Setup your PostgreSQL database with the schema provided by running : 
+"psql -f tournament.sql" in your console. 
+Use the module by importing it into your python scripts. 
 tournament_test.py gives a general test of the functions in the module
 which is part of the assessment.
 	

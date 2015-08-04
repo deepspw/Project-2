@@ -1,37 +1,52 @@
 #!/usr/bin/env python
 # 
 # tournament.py -- implementation of a Swiss-system tournament
-#
+# August 3 2015 https://github.com/pgpnda
+# Simple tournament module for running a swiss style tournament
+# on a psql server.
 
 import psycopg2
-    
+
+class DB:
+    """
+    DB class for the various connections and commits used throughout
+    the module. Whilst some of this works im having trouble when 
+    passing in arguments that substitute values such has 
+    "("INSERT INTO players(name) values(%s)", (name,))"
+    aswell as any cursor functionality.
+    """
+    def __init__(self, db_con_str="dbname=tournament"):
+        self.conn = psycopg2.connect(db_con_str)
+    def cursor(self):
+        return self.conn.cursor()
+        
+    def execute(self, query_string, closeme=False):
+        c = self.cursor()
+        c.execute(query_string)
+        if closeme:
+            self.conn.commit()
+            self.conn.close()
+    def close(self):
+        self.conn.commit()
+        self.conn.close()
 
 def connect():
     """Connect to the PostgreSQL database.  Returns a database connection."""
-    return psycopg2.connect("dbname=tournament")
+    return DB().conn
 
 
 def deleteMatches():
     """Remove all the match records from the database."""
     try:
-        connection = connect()
-        c = connection.cursor()
-        c.execute("DELETE FROM matches;")
-        connection.commit()
-        connection.close()
+        DB().execute("DELETE FROM matches;",True)
     except Exception as e:
         print e
-
 
 
 def deletePlayers():
     """Remove all the player records from the database."""
     try:
-        connection = connect()
-        c = connection.cursor()
-        c.execute("DELETE FROM players;")
-        connection.commit()
-        connection.close()
+        DB().execute("DELETE FROM players;",True)
     except Exception as e:
         print e
 
@@ -40,11 +55,9 @@ def countPlayers():
     connection = connect()
     c = connection.cursor()
     c.execute("SELECT count(*) AS num FROM players")
-    count = c.fetchall()
+    count = c.fetchone()[0]
     connection.close()
-    return count.pop()[0]
-
-
+    return count
 
 
 def registerPlayer(name):
@@ -141,8 +154,6 @@ def swissPairings():
         if len(rawpairs) != 0:
             pairs.append(rawpairs.pop())
         return pairs
-
-
 
     except Exception as e:
         print "error: " + str(e)
