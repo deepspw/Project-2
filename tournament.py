@@ -131,6 +131,8 @@ def swissPairings():
                   ORDER BY wins DESC""")
         rawdata = c.fetchall()
         rawpairs = []
+        if len(rawdata) % 2:
+            rawpairs.append(("NA","bye"))
         pairs = []
         for e in rawdata:
             rawpairs.append(e)
